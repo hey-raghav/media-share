@@ -24,7 +24,11 @@ html, body {
 let player, timer;
 
 /* WebSocket to backend */
-const socket = new WebSocket("ws://127.0.0.1:3000");
+const socket = new WebSocket(
+  location.protocol === "https:"
+    ? "wss://" + location.host
+    : "ws://" + location.host
+);
 
 socket.onmessage = e => {
   const q = JSON.parse(e.data);
