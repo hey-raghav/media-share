@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+html, body {
+  margin: 0;
+  background: black;
+  width: 100%;
+  height: 100%;
+}
+#player {
+  width: 100%;
+  height: 100%;
+}
+</style>
+</head>
+<body>
+
+<div id="player"></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+let player, timer;
+
+/* WebSocket to backend */
+const socket = new WebSocket("ws://127.0.0.1:3000");
+
+socket.onmessage = e => {
+  const q = JSON.parse(e.data);
+  if (q.length) play(q[0]);
+};
+
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player("player", {
+    host: "https://www.youtube-nocookie.com",
+    playerVars: {
+      autoplay: 1,
+      controls: 0,
+      origin: "http://127.0.0.1"
+    },
+    events: {
+      onReady: e => e.target.mute()
+    }
+  });
+}
+
+function play(id) {
+  if (timer) clearTimeout(timer);
+  player.stopVideo();
+  player.loadVideoById(id);
+
+  setTimeout(() => player.unMute(), 700);
+
+  timer = setTimeout(() => {
+    player.stopVideo();
+    fetch("/next", { method: "POST" });
+  }, 30000); // 30 seconds
+}
+</script>
+
+</body>
+</html>

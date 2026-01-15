@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Pay & Play Video</title>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #4e54c8, #8f94fb);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    text-align: center;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 35px;
+    width: 360px;
+    border-radius: 18px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  }
+
+  h2 {
+    margin-bottom: 18px;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 18px;
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    background: #10b981;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #0d946c;
+    transform: scale(1.03);
+  }
+
+  .note {
+    margin-top: 12px;
+    font-size: 13px;
+    opacity: 0.9;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h2>Pay ₹30 to play your video<br>(30 seconds)</h2>
+
+  <input id="url" placeholder="Paste YouTube link">
+
+  <button onclick="pay()">Pay & Submit</button>
+
+  <div class="note">Payment secured by Razorpay</div>
+</div>
+
+
+<script>
+function extractVideoId(url) {
+  const m = url.match(
+    /(?:youtube\.com\/(?:.*v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/
+  );
+  return m ? m[1] : null;
+}
+
+async function pay() {
+  const videoId = extractVideoId(document.getElementById("url").value);
+  if (!videoId) {
+    alert("Invalid YouTube link");
+    return;
+  }
+
+  const order = await fetch("/create-order", { method: "POST" })
+    .then(r => r.json());
+
+  const rzp = new Razorpay({
+    key: "rzp_test_xxxxxxxxxx",
+    order_id: order.id,
+    amount: order.amount,
+    currency: "INR",
+    name: "Video Tip",
+    description: "30 second video play",
+    handler: function (res) {
+      fetch("/verify-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...res, videoId })
+      }).then(() => {
+        window.location.href = "/thankyou.html";
+      });
+    }
+  });
+
+  rzp.open();
+}
+</script>
+
+</body>
+</html>
