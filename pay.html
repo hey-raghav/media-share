@@ -18,17 +18,18 @@
     text-align: center;
   }
 
-  .container {
-    background: rgba(255, 255, 255, 0.15);
+  .card {
+    width: 350px;
     padding: 35px;
-    width: 360px;
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 18px;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 35px rgba(0,0,0,0.25);
+    animation: fadeIn 0.7s ease;
   }
 
   h2 {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
     font-size: 22px;
     font-weight: 600;
     line-height: 1.4;
@@ -37,10 +38,10 @@
   input {
     width: 100%;
     padding: 12px;
-    border-radius: 10px;
-    border: none;
-    font-size: 15px;
     outline: none;
+    border: none;
+    border-radius: 10px;
+    font-size: 15px;
     margin-bottom: 18px;
   }
 
@@ -54,7 +55,7 @@
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: 0.3s;
+    transition: 0.3s ease;
   }
 
   button:hover {
@@ -64,24 +65,29 @@
 
   .note {
     margin-top: 12px;
+    opacity: 0.85;
     font-size: 13px;
-    opacity: 0.9;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
   }
 </style>
 </head>
 
 <body>
 
-<div class="container">
+<div class="card">
   <h2>Pay ₹30 to play your video<br>(30 seconds)</h2>
 
-  <input id="url" placeholder="Paste YouTube link">
+  <input id="name" placeholder="Your name">
+  <input id="url" placeholder="YouTube link">
 
   <button onclick="pay()">Pay & Submit</button>
 
-  <div class="note">Payment secured by Razorpay</div>
+  <div class="note">Secured by Razorpay</div>
 </div>
-
 
 <script>
 function extractVideoId(url) {
@@ -92,30 +98,28 @@ function extractVideoId(url) {
 }
 
 async function pay() {
+  const name = document.getElementById("name").value.trim();
   const videoId = extractVideoId(document.getElementById("url").value);
-  if (!videoId) {
-    alert("Invalid YouTube link");
+
+  if (!name || !videoId) {
+    alert("Enter name and valid YouTube link");
     return;
   }
 
   const order = await fetch("/create-order", { method: "POST" })
-    .then(r => r.json());
+      .then(r => r.json());
 
   const rzp = new Razorpay({
     key: "rzp_test_S4Hm9OFjObFDF0",
     order_id: order.id,
     amount: order.amount,
     currency: "INR",
-    name: "Video Tip",
-    description: "30 second video play",
-    handler: function (res) {
+    handler: res => {
       fetch("/verify-payment", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...res, videoId })
-      }).then(() => {
-        window.location.href = "/thankyou.html";
-      });
+        body: JSON.stringify({ ...res, videoId, name })
+      }).then(() => location.href = "/thankyou.html");
     }
   });
 

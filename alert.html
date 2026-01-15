@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+body {
+  margin: 0;
+  background: transparent;
+  font-family: Arial, sans-serif;
+}
+#alert {
+  display: none;
+  padding: 20px 30px;
+  background: rgba(0,0,0,0.75);
+  color: white;
+  font-size: 28px;
+  border-radius: 12px;
+}
+</style>
+</head>
+<body>
+
+<div id="alert"></div>
+
+<script>
+const alertBox = document.getElementById("alert");
+
+const socket = new WebSocket(
+  location.protocol === "https:"
+    ? "wss://" + location.host
+    : "ws://" + location.host
+);
+
+let hideTimer = null;
+
+socket.onmessage = e => {
+  const q = JSON.parse(e.data);
+  if (!q.length) return;
+
+  alertBox.textContent = `${q[0].name} donated ₹30`;
+  alertBox.style.display = "block";
+
+  // reset timer if another donation comes
+  if (hideTimer) clearTimeout(hideTimer);
+
+  hideTimer = setTimeout(() => {
+    alertBox.style.display = "none";
+  }, 10000); // ⏱️ 10 seconds
+};
+</script>
+
+</body>
+</html>
