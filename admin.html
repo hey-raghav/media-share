@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Manual Play (Admin)</title>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.box {
+  width: 360px;
+  padding: 30px;
+  background: #1f1f1f;
+  border-radius: 12px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #10b981;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0d946c;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <h2>Manual Video Play</h2>
+
+  <input id="name" placeholder="Name">
+  <input id="url" placeholder="YouTube link">
+
+  <button onclick="play()">Play Video</button>
+</div>
+
+<script>
+function extractVideoId(url) {
+  const m = url.match(
+    /(?:youtube\.com\/(?:.*v=|shorts\/)|youtu\.be\/)([^"&?\/\s]{11})/
+  );
+  return m ? m[1] : null;
+}
+
+async function play() {
+  const name = document.getElementById("name").value.trim();
+  const videoId = extractVideoId(document.getElementById("url").value);
+
+  if (!name || !videoId) {
+    alert("Enter name and valid YouTube link");
+    return;
+  }
+
+  await fetch("/admin-play", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, videoId })
+  });
+
+  document.getElementById("url").value = "";
+}
+</script>
+
+</body>
+</html>

@@ -69,6 +69,21 @@ app.post("/verify-payment", (req, res) => {
   res.json({ success: true });
 });
 
+/* ===== ADMIN MANUAL PLAY ===== */
+app.post("/admin-play", (req, res) => {
+  const { name, videoId } = req.body;
+
+  if (!name || !isValidId(videoId)) {
+    return res.status(400).json({ error: "Invalid input" });
+  }
+
+  queue = [{ name, videoId }];
+  broadcast();
+
+  res.json({ success: true });
+});
+
+
 /* Clear after play */
 app.post("/next", (req, res) => {
   queue = [];
