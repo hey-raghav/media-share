@@ -21,36 +21,72 @@ html, body {
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-let player, timer;
+let player, timer, keepAliveTimer;
 
-/* WebSocket to backend */
-const socket = new WebSocket(
-  location.protocol === "https:"
-    ? "wss://" + location.host
-    : "ws://" + location.host
-);
+/* WebSocket with auto reconnect */
+function connectWS() {
+  const ws = new WebSocket(
+    location.protocol === "https:"
+      ? "wss://" + location.host
+      : "ws://" + location.host
+  );
 
-socket.onmessage = e => {
-  const q = JSON.parse(e.data);
-  if (q.length) play(q[0]);
-};
+  ws.onmessage = e => {
+    const q = JSON.parse(e.data);
+    if (q.length) play(q[0].videoId);
+  };
 
+  ws.onclose = () => {
+    setTimeout(connectWS, 2000);
+  };
+}
+
+connectWS();
+
+/* YouTube Player */
 function onYouTubeIframeAPIReady() {
   player = new YT.Player("player", {
     host: "https://www.youtube-nocookie.com",
     playerVars: {
       autoplay: 1,
       controls: 0,
-      origin: "http://127.0.0.1"
+      mute: 1
     },
     events: {
-      onReady: e => e.target.mute()
+      onReady: e => {
+        e.target.mute();
+        startKeepAlive();
+      }
     }
   });
 }
 
+/* Prevent idle freeze */
+function startKeepAlive() {
+  if (keepAliveTimer) clearInterval(keepAliveTimer);
+
+  keepAliveTimer = setInterval(() => {
+    if (!player || !player.getPlayerState) return;
+
+    const state = player.getPlayerState();
+
+    if (
+      state === YT.PlayerState.UNSTARTED ||
+      state === YT.PlayerState.ENDED ||
+      state === YT.PlayerState.CUED
+    ) {
+      player.playVideo();
+      setTimeout(() => player.pauseVideo(), 200);
+    }
+  }, 300000); // every 5 minutes
+}
+
+/* Play video for 30 seconds */
 function play(id) {
+  if (!player || !player.loadVideoById) return;
+
   if (timer) clearTimeout(timer);
+
   player.stopVideo();
   player.loadVideoById(id);
 
@@ -59,7 +95,7 @@ function play(id) {
   timer = setTimeout(() => {
     player.stopVideo();
     fetch("/next", { method: "POST" });
-  }, 30000); // 30 seconds
+  }, 30000);
 }
 </script>
 
