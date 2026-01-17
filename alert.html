@@ -24,29 +24,42 @@ body {
 
 <script>
 const alertBox = document.getElementById("alert");
-
-const socket = new WebSocket(
-  location.protocol === "https:"
-    ? "wss://" + location.host
-    : "ws://" + location.host
-);
-
 let hideTimer = null;
+let ws;
 
-socket.onmessage = e => {
-  const q = JSON.parse(e.data);
-  if (!q.length) return;
+/* ---- WebSocket with auto-reconnect ---- */
+function connectWS() {
+  ws = new WebSocket(
+    location.protocol === "https:"
+      ? "wss://" + location.host
+      : "ws://" + location.host
+  );
 
-  alertBox.textContent = `${q[0].name} donated ₹30`;
-  alertBox.style.display = "block";
+  ws.onmessage = e => {
+    const q = JSON.parse(e.data);
+    if (!q.length) return;
 
-  // reset timer if another donation comes
-  if (hideTimer) clearTimeout(hideTimer);
+    alertBox.textContent = `${q[0].name} donated ₹30`;
+    alertBox.style.display = "block";
 
-  hideTimer = setTimeout(() => {
-    alertBox.style.display = "none";
-  }, 10000); // ⏱️ 10 seconds
-};
+    if (hideTimer) clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      alertBox.style.display = "none";
+    }, 10000);
+  };
+
+  ws.onclose = () => {
+    setTimeout(connectWS, 2000);
+  };
+}
+
+connectWS();
+
+/* ---- Keep browser source alive ---- */
+setInterval(() => {
+  // tiny DOM touch to prevent OBS idle freeze
+  alertBox.style.opacity = "1";
+}, 60000); // every 1 minute
 </script>
 
 </body>
